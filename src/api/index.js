@@ -10,6 +10,6 @@ router.get('/', (req, res) => {
   });
 });
 
-router.use('/mars-weather', marsWeather);
+router.use('/get-proxy-data', marsWeather);
 
 module.exports = router;

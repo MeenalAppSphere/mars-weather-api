@@ -16,7 +16,8 @@ const speedLimiter = slowDown({
 
 const router = express.Router();
 
-const BASE_URL = 'https://api.nasa.gov/insight_weather/?';
+const BASE_URL = process.env.apiUrl;
+const token = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJjZXItZ2VuZXJhdGUtand0IiwiaXNzIjoiY2VyLWp3dC11dGlsaXR5IiwiYXVkIjoiY2VyLWp3dC11dGlsaXR5IiwicGF5bG9hZCI6IntcImN1c3RvbWVyVWlkXCI6MjM0MzgsXCJiaWxsTGFuZ3VhZ2VcIjpcImVuLWdiXCJ9In0.rmeiAtJzNUG6ypH60lqmwjwKGPLTwScOfTU47_GHKv8';
 
 let cachedData;
 let cacheTime;
@@ -24,33 +25,13 @@ let cacheTime;
 const apiKeys = new Map();
 apiKeys.set('12345', true);
 
-router.get('/', limiter, speedLimiter, (req, res, next) => {
-  const apiKey = req.get('X-API-KEY');
-  if (apiKeys.has(apiKey)) {
-    next();
-  } else {
-    const error = new Error('Invalid API KEY');
-    next(error);
-  }
-}, async (req, res, next) => {
-  // in memory cache
-  if (cacheTime && cacheTime > Date.now() - 30 * 1000) {
-    // BTW - set a cache header so browsers work WITH you.
-    // WOW awesome stuff I learned at least 2 new things today @CodingGarden - what is you opinion on using manual cache instead of 'Cache-Control' ie res set('Cache-Control', 'public, max-age=300, s-maxage=600') 
-    return res.json(cachedData);
-  }
+router.get('/', async (req, res, next) => {
   try {
-    const params = new URLSearchParams({
-      api_key: process.env.NASA_API_KEY,
-      feedtype: 'json',
-      ver: '1.0'
-    });
-    // 1. make a request to nasa api
-    const { data } = await axios.get(`${BASE_URL}${params}`);
-    // 2. respond to this request with data from nasa api
-    cachedData = data;
-    cacheTime = Date.now();
-    data.cacheTime = cacheTime;
+    const headers = { 'content-type': 'application/json', 'Authorization': 'Api-Key ' + process.env.apiKey }
+    const body = JSON.stringify({ "token": token });
+    // 1. make a request to ors api
+    const { data } = await axios.post(`${BASE_URL}`, body, { headers: headers });
+    // 2. respond to this request with data from ors api
     return res.json(data);
   } catch (error) {
     return next(error);
